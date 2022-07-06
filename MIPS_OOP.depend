@@ -1,0 +1,131 @@
+# depslib dependency file v1.0
+1656404934 source:/home/wang/Desktop/MIPS_OOP/main.cpp
+	<iostream>
+	"CEOs.h"
+	"CLI11.hpp"
+	"header.h"
+	<string>
+
+1656406195 /home/wang/Desktop/MIPS_OOP/CEOs.h
+	<iostream>
+	"MIPS.h"
+	"fht.h"
+	"Utilities.h"
+	"header.h"
+	<Eigen/Dense>
+
+1656404710 source:/home/wang/Desktop/MIPS_OOP/MIPS.cpp
+	"MIPS.h"
+
+1656404718 /home/wang/Desktop/MIPS_OOP/MIPS.h
+	<stdlib.h>
+	<iostream>
+	<fstream>
+	<Eigen/Dense>
+	"header.h"
+
+1656405768 source:/home/wang/Desktop/MIPS_OOP/CEOs.cpp
+	"CEOs.h"
+	<cmath>
+	<omp.h>
+
+1656404845 source:/home/wang/Desktop/MIPS_OOP/header.cpp
+	"header.h"
+
+1656404846 /home/wang/Desktop/MIPS_OOP/header.h
+	<cstdlib>
+	<chrono>
+	<iostream>
+	<cstdio>
+	<algorithm>
+	<vector>
+	<utility>
+	<unordered_map>
+	<queue>
+	<unordered_set>
+	<string>
+	<time.h>
+	<random>
+	<Eigen/Dense>
+	<boost/dynamic_bitset.hpp>
+
+1656077981 /home/wang/Desktop/MIPS_OOP/CLI11.hpp
+	<stdexcept>
+	<sstream>
+	<utility>
+	<tuple>
+	<numeric>
+	<string>
+	<cmath>
+	<locale>
+	<iostream>
+	<iomanip>
+	<functional>
+	<set>
+	<type_traits>
+	<map>
+	<vector>
+	<exception>
+	<iterator>
+	<algorithm>
+	<cstdint>
+	<memory>
+	<limits>
+	<fstream>
+	<filesystem>
+	<filesystem>
+	<sys/stat.h>
+	<sys/types.h>
+
+1656402130 source:/home/wang/Desktop/MIPS_OOP/Utilities.cpp
+	"Utilities.h"
+
+1656402151 /home/wang/Desktop/MIPS_OOP/Utilities.h
+	"header.h"
+	<vector>
+	<queue>
+	<random>
+	<fstream>
+	<sstream>
+	<algorithm>
+	<unordered_map>
+	<unordered_set>
+
+1656308756 source:/home/wang/Desktop/MIPS_OOP/fast_copy.c
+	"fast_copy.h"
+	<string.h>
+	<stdlib.h>
+	<x86intrin.h>
+
+1656308936 /home/wang/Desktop/MIPS_OOP/fast_copy.h
+	<stdlib.h>
+	"fast_copy.c"
+
+1656308756 /home/wang/Desktop/MIPS_OOP/fast_copy.c
+	"fast_copy.h"
+	<string.h>
+	<stdlib.h>
+	<x86intrin.h>
+
+1656308926 /home/wang/Desktop/MIPS_OOP/fht.h
+	<string.h>
+	<stdlib.h>
+
+1656308799 source:/home/wang/Desktop/MIPS_OOP/fht.c
+	"fht.h"
+	"fht_impl.h"
+
+1656308954 /home/wang/Desktop/MIPS_OOP/fht_impl.h
+	"fast_copy.h"
+	"fht_avx.c"
+	"fht_sse.c"
+
+1642563176 /home/wang/Desktop/MIPS_OOP/fht_avx.c
+	"fht.h"
+
+1642563176 /home/wang/Desktop/MIPS_OOP/fht_sse.c
+	"fht.h"
+
+1642563176 source:/home/wang/Desktop/MIPS_OOP/fht_sse.c
+	"fht.h"
+
