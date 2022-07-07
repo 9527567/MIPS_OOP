@@ -1,7 +1,7 @@
 #include "CEOs.h"
 #include <cmath>
 #include <omp.h>
-
+#include <pybind11/pybind11.h>
 // CEOs class method
 
 // ----------------------------------------1CEOsEst---------------------------------
@@ -32,7 +32,7 @@ void OneCEOs::rotateData()
         HD3Generator(PARAM_CEOs_D_UP);
 
         // Fast Hadamard transform
-        #pragma omp parallel for
+#pragma omp parallel for
         for (int n = 0; n < PARAM_DATA_N; ++n)
         {
             // Get data
@@ -49,9 +49,7 @@ void OneCEOs::rotateData()
 
             PROJECTED_X.col(n) = vecPoint;
         }
-    }
-
-    else
+    } else
     {
         // Generate normal distribution
         gaussGenerator(PARAM_CEOs_D_UP, PARAM_DATA_D);
@@ -94,6 +92,7 @@ void OneCEOs::HD3Generator(int p_iSize)
             HD3(r, s) = 2 * unifDist(generator) - 1;
 
 }
+
 /**
 Generate random N(0, 1) from a normal distribution using C++ function
 
@@ -179,8 +178,7 @@ void OneCEOs::find_TopK()
                 fht_float(vecProjectedQuery.data(), PARAM_INTERNAL_LOG2_CEOs_D_UP);
                 //FWHT(vecProjectedQuery);
             }
-        }
-        else
+        } else
             vecProjectedQuery = MATRIX_G * vecQuery;
 
         // Find maximum index
@@ -188,14 +186,14 @@ void OneCEOs::find_TopK()
         vecProjectedQuery.maxCoeff(&maxIndex);
 
         auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        projectTime += (float)durTime.count() / 1000000;
+        projectTime += (float) durTime.count() / 1000000;
 
 
         // Find top-K
         startTime = chrono::high_resolution_clock::now();
         extract_TopK_MIPS(vecQuery, MATRIX_CEOs.col(maxIndex), PARAM_MIPS_TOP_K, matTopK.col(q));
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topKTime += (float)durTime.count() / 1000000;
+        topKTime += (float) durTime.count() / 1000000;
     }
 
     auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
@@ -204,7 +202,7 @@ void OneCEOs::find_TopK()
     printf("Estimation time in second is %f \n", projectTime);
     printf("TopK time in second is %f \n", topKTime);
 
-    printf("1CEOs TopK Time in second is %f \n", (float)durTime.count() / 1000000);
+    printf("1CEOs TopK Time in second is %f \n", (float) durTime.count() / 1000000);
 
     if (PARAM_INTERNAL_SAVE_OUTPUT)
     {
@@ -234,7 +232,7 @@ void TwoCEOs::build_Index()
     MATRIX_CEOs = MatrixXi::Zero(PARAM_MIPS_TOP_B, PARAM_CEOs_D_UP * PARAM_CEOs_D_UP);
 
     omp_set_num_threads(8);
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int d1 = 0; d1 < PARAM_CEOs_D_UP; ++d1)
     {
         printf("this is No.%d Thread ,i=%d\n", omp_get_thread_num(), d1);
@@ -298,8 +296,7 @@ void TwoCEOs::find_TopK()
                 fht_float(vecProjectedQuery.data(), PARAM_INTERNAL_LOG2_CEOs_D_UP);
                 //FWHT(vecProjectedQuery);
             }
-        }
-        else
+        } else
             vecProjectedQuery = MATRIX_G * vecQuery;
 
         // Find maximum index
@@ -308,13 +305,14 @@ void TwoCEOs::find_TopK()
         vecProjectedQuery.minCoeff(&minIndex);
 
         auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        projectTime += (float)durTime.count() / 1000000;
+        projectTime += (float) durTime.count() / 1000000;
 
         // Find topK
         startTime = chrono::high_resolution_clock::now();
-        extract_TopK_MIPS(vecQuery, MATRIX_CEOs.col(maxIndex * PARAM_CEOs_D_UP + minIndex), PARAM_MIPS_TOP_K, matTopK.col(q));
+        extract_TopK_MIPS(vecQuery, MATRIX_CEOs.col(maxIndex * PARAM_CEOs_D_UP + minIndex), PARAM_MIPS_TOP_K,
+                          matTopK.col(q));
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topKTime += (float)durTime.count() / 1000000;
+        topKTime += (float) durTime.count() / 1000000;
 
     }
 
@@ -324,7 +322,7 @@ void TwoCEOs::find_TopK()
     printf("Estimation time in second is %f \n", projectTime);
     printf("TopK time in second is %f \n", topKTime);
 
-    printf("2CEOs TopK Time in second is %f \n", (float)durTime.count() / 1000000);
+    printf("2CEOs TopK Time in second is %f \n", (float) durTime.count() / 1000000);
 
     if (PARAM_INTERNAL_SAVE_OUTPUT)
     {
@@ -347,17 +345,18 @@ void TwoCEOs::find_TopK()
  - VectorXi:: min & max contains top K point indexes
  *
  */
-void sCEOsEst::extract_TopK_MinMax_Idx(const Ref<VectorXf> &vecCounter, int p_iTopK, Ref<VectorXi> vecMinIdx, Ref<VectorXi> vecMaxIdx)
+void sCEOsEst::extract_TopK_MinMax_Idx(const Ref<VectorXf> &vecCounter, int p_iTopK, Ref<VectorXi> vecMinIdx,
+                                       Ref<VectorXi> vecMaxIdx)
 {
-    priority_queue< IFPair, vector<IFPair>, greater<IFPair> > minQueTopK; // take the min out, keep the max in queue
-    priority_queue< IFPair, vector<IFPair> > maxQueTopK;
+    priority_queue<IFPair, vector<IFPair>, greater<IFPair> > minQueTopK; // take the min out, keep the max in queue
+    priority_queue<IFPair, vector<IFPair> > maxQueTopK;
 
-    for (int n = 0; n < (int)vecCounter.size(); ++n)
+    for (int n = 0; n < (int) vecCounter.size(); ++n)
     {
         float fTemp = vecCounter(n);
 
         // Get min out
-        if ((int)minQueTopK.size() < p_iTopK)
+        if ((int) minQueTopK.size() < p_iTopK)
             minQueTopK.push(IFPair(n, fTemp));
         else if (fTemp > minQueTopK.top().m_fValue)
         {
@@ -366,7 +365,7 @@ void sCEOsEst::extract_TopK_MinMax_Idx(const Ref<VectorXf> &vecCounter, int p_iT
         }
 
         // Get max out
-        if ((int)maxQueTopK.size() < p_iTopK)
+        if ((int) maxQueTopK.size() < p_iTopK)
             maxQueTopK.push(IFPair(n, fTemp));
         else if (fTemp < maxQueTopK.top().m_fValue)
         {
@@ -385,21 +384,21 @@ void sCEOsEst::extract_TopK_MinMax_Idx(const Ref<VectorXf> &vecCounter, int p_iT
         vecMinIdx(n) = maxQueTopK.top().m_iIndex;
         maxQueTopK.pop();
     }
- }
+}
 
- /** \brief Compute topB and then B inner product to return topK
- *
- * \param
- *
- - vecCounter: Inner product estimation histogram of N x 1
- - p_iTopK: top K largest values
- *
- *
- * \return
- *
- - VectorXi::p_vecTopK contains top K point indexes with largest values
- *
- */
+/** \brief Compute topB and then B inner product to return topK
+*
+* \param
+*
+- vecCounter: Inner product estimation histogram of N x 1
+- p_iTopK: top K largest values
+*
+*
+* \return
+*
+- VectorXi::p_vecTopK contains top K point indexes with largest values
+*
+*/
 
 
 
@@ -421,19 +420,19 @@ void sCEOsEst::extract_TopK_MinMax_Idx(const Ref<VectorXf> &vecCounter, int p_iT
  - VectorXi::p_vecTopK contains top K point indexes with largest values
  *
  */
-void sCEOsEst::extract_TopB_TopK_Histogram(const Ref<VectorXf> & p_vecCounter, const Ref<VectorXf> &p_vecQuery,
-                                 int p_iTopB, int p_iTopK, Ref<VectorXi> p_vecTopK)
+void sCEOsEst::extract_TopB_TopK_Histogram(const Ref<VectorXf> &p_vecCounter, const Ref<VectorXf> &p_vecQuery,
+                                           int p_iTopB, int p_iTopK, Ref<VectorXi> p_vecTopK)
 {
     // Find topB
-    assert((int)p_vecCounter.size() >= p_iTopB);
+    assert((int) p_vecCounter.size() >= p_iTopB);
 
-    priority_queue< IFPair, vector<IFPair>, greater<IFPair> > minQueTopK;
+    priority_queue<IFPair, vector<IFPair>, greater<IFPair> > minQueTopK;
 
-    for (int n = 0; n < (int)p_vecCounter.size(); ++n)
+    for (int n = 0; n < (int) p_vecCounter.size(); ++n)
     {
         float fTemp = p_vecCounter(n);
 
-        if ((int)minQueTopK.size() < p_iTopB)
+        if ((int) minQueTopK.size() < p_iTopB)
             minQueTopK.push(IFPair(n, fTemp));
         else if (fTemp > minQueTopK.top().m_fValue)
         {
@@ -457,14 +456,14 @@ void sCEOsEst::extract_TopB_TopK_Histogram(const Ref<VectorXf> & p_vecCounter, c
 
     // Find top-K
     //for (int n = 0; n < (int)vecTopB.size(); ++n)
-    for (const auto & iPointIdx: vecTopB)
+    for (const auto &iPointIdx: vecTopB)
     {
         // Get point Idx
         // int iPointIdx = vecTopB[n];
         float fValue = p_vecQuery.dot(MATRIX_X.col(iPointIdx));
 
         // Insert into minQueue
-        if ((int)minQueTopK.size() < p_iTopK)
+        if ((int) minQueTopK.size() < p_iTopK)
             minQueTopK.push(IFPair(iPointIdx, fValue));
         else
         {
@@ -485,8 +484,6 @@ void sCEOsEst::extract_TopB_TopK_Histogram(const Ref<VectorXf> & p_vecCounter, c
         minQueTopK.pop();
     }
 }
-
-
 
 
 /**
@@ -546,8 +543,7 @@ void sCEOsEst::find_TopK()
                 fht_float(vecProjectedQuery.data(), PARAM_INTERNAL_LOG2_CEOs_D_UP);
                 //FWHT(vecProjectedQuery);
             }
-        }
-        else
+        } else
             vecProjectedQuery = MATRIX_G * vecQuery;
 
         // Get the minimum and maximum indexes
@@ -564,7 +560,7 @@ void sCEOsEst::find_TopK()
 //                              + vecProjectedQuery(vecMinIdx(d)) * PROJECTED_X.col(vecMinIdx(d));
 
         auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        estTime += (float)durTime.count() / 1000000;
+        estTime += (float) durTime.count() / 1000000;
 
         //----------------------------------------------
         // Find topB & topK together
@@ -573,7 +569,7 @@ void sCEOsEst::find_TopK()
         extract_TopB_TopK_Histogram(vecMIPS, vecQuery, PARAM_MIPS_TOP_B, PARAM_MIPS_TOP_K, matTopK.col(q));
 
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topKTime += (float)durTime.count() / 1000000;
+        topKTime += (float) durTime.count() / 1000000;
     }
 
     auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
@@ -582,11 +578,11 @@ void sCEOsEst::find_TopK()
     printf("Estimation time in second is %f \n", estTime);
     printf("TopK time in second is %f \n", topKTime);
 
-    printf("sCEOs Est TopK Time in second is %f \n", (float)durTime.count() / 1000000);
+    printf("sCEOs Est TopK Time in second is %f \n", (float) durTime.count() / 1000000);
 
     if (PARAM_INTERNAL_SAVE_OUTPUT)
         outputFile(matTopK, "CEOs_Est_upD_" + int2str(PARAM_CEOs_D_UP) +
-                      "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt");
+                            "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt");
 }
 
 
@@ -611,7 +607,7 @@ void sCEOsTA::build_Index()
     // For each dimension, we keep track the index of points sorted by its values from large to small
     CEOs_TA_SORTED_IDX = MatrixXi(PARAM_DATA_N, PARAM_CEOs_D_UP);
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int d = 0; d < PARAM_CEOs_D_UP; ++d)
     {
         vector<int> idx(PARAM_DATA_N);
@@ -627,7 +623,7 @@ void sCEOsTA::build_Index()
 
         // Write to GREEDY_STRUCT
         //for (n = 0; n < PARAM_DATA_N; ++n)
-            //PROJECT_X_SORTED_IDX(d, n) = idx[n]; // Only contain the indexes of point
+        //PROJECT_X_SORTED_IDX(d, n) = idx[n]; // Only contain the indexes of point
         CEOs_TA_SORTED_IDX.col(d) = Map<VectorXi>(idx.data(), PARAM_DATA_N);
     }
 
@@ -681,8 +677,7 @@ void sCEOsTA::find_TopK()
                 fht_float(vecProjectedQuery.data(), PARAM_INTERNAL_LOG2_CEOs_D_UP);
                 //FWHT(vecProjectedQuery);
             }
-        }
-        else
+        } else
             vecProjectedQuery = MATRIX_G * vecQuery;
 
         // Get the minimum and maximum indexes
@@ -690,7 +685,7 @@ void sCEOsTA::find_TopK()
         extract_TopK_MinMax_Idx(vecProjectedQuery, PARAM_CEOs_S0, vecMinIdx, vecMaxIdx);
 
         auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        projectTime += (float)durTime.count() / 1000000;
+        projectTime += (float) durTime.count() / 1000000;
 
         // Start TA algorithm to find top-B
         startTime = chrono::high_resolution_clock::now();
@@ -729,7 +724,7 @@ void sCEOsTA::find_TopK()
                         fEstProduct += (PROJECTED_X(iPointIdx, vecMaxIdx(d)) - PROJECTED_X(iPointIdx, vecMinIdx(d)));
 
                     // Insert into minQueue
-                    if ((int)minQueTopB.size() < PARAM_MIPS_TOP_B)
+                    if ((int) minQueTopB.size() < PARAM_MIPS_TOP_B)
                         minQueTopB.push(IFPair(iPointIdx, fEstProduct));
                     else
                     {
@@ -758,7 +753,7 @@ void sCEOsTA::find_TopK()
                         fEstProduct += (PROJECTED_X(iPointIdx, vecMaxIdx[d]) - PROJECTED_X(iPointIdx, vecMinIdx[d]));
 
                     // Insert into minQueue
-                    if ((int)minQueTopB.size() < PARAM_MIPS_TOP_B)
+                    if ((int) minQueTopB.size() < PARAM_MIPS_TOP_B)
                         minQueTopB.push(IFPair(iPointIdx, fEstProduct));
                     else
                     {
@@ -772,7 +767,7 @@ void sCEOsTA::find_TopK()
             }
 
             // Finishing a level, then check condition to stop
-            if (((int)minQueTopB.size() == PARAM_MIPS_TOP_B) && (minQueTopB.top().m_fValue >= fThreshold))
+            if (((int) minQueTopB.size() == PARAM_MIPS_TOP_B) && (minQueTopB.top().m_fValue >= fThreshold))
             {
                 iNumAccessedRows += (n + 1);
                 iNumProducts += bitsetHist.count(); // bitsetHist.size(); // number of inner product computation for each query
@@ -788,7 +783,7 @@ void sCEOsTA::find_TopK()
         }
 
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topBTime += (float)durTime.count() / 1000000;
+        topBTime += (float) durTime.count() / 1000000;
 
         // Top-k
         startTime = chrono::high_resolution_clock::now();
@@ -799,7 +794,7 @@ void sCEOsTA::find_TopK()
             extract_TopK_MIPS(vecQuery, vecTopB, PARAM_MIPS_TOP_K, matTopK.col(q));
 
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topKTime += (float)durTime.count() / 1000000;
+        topKTime += (float) durTime.count() / 1000000;
 
     }
 
@@ -810,14 +805,14 @@ void sCEOsTA::find_TopK()
     printf("TopB time in second is %f \n", topBTime);
     printf("TopK time in second is %f \n", topKTime);
 
-    printf("Number of accessing rows per query is %f \n", (float)iNumAccessedRows / PARAM_QUERY_Q);
-    printf("Number of inner products per query is %f \n", (float)iNumProducts / PARAM_QUERY_Q);
+    printf("Number of accessing rows per query is %f \n", (float) iNumAccessedRows / PARAM_QUERY_Q);
+    printf("Number of inner products per query is %f \n", (float) iNumProducts / PARAM_QUERY_Q);
 
-    printf("sCEOs TA TopK Time in second is %f \n", (float)durTime.count() / 1000000);
+    printf("sCEOs TA TopK Time in second is %f \n", (float) durTime.count() / 1000000);
 
     if (PARAM_INTERNAL_SAVE_OUTPUT)
         outputFile(matTopK, "CEOs_TA_upD_" + int2str(PARAM_CEOs_D_UP) +
-                      "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt");
+                            "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt");
 }
 
 
@@ -841,7 +836,7 @@ void coCEOs::build_Index()
     coCEOs_MAX_IDX = vector<IFPair>(PARAM_CEOs_N_DOWN * PARAM_CEOs_D_UP);
     coCEOs_MIN_IDX = vector<IFPair>(PARAM_CEOs_N_DOWN * PARAM_CEOs_D_UP);
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int d = 0; d < PARAM_CEOs_D_UP; ++d)
     {
         // For each dimension, we need to sort and keep top m
@@ -884,17 +879,17 @@ void coCEOs::build_Index()
  *
  */
 void coCEOs::extract_TopB_TopK_Histogram(const unordered_map<int, float> &mapCounter, const Ref<VectorXf> &p_vecQuery,
-                                 int p_iTopB, int p_iTopK, Ref<VectorXi> p_vecTopK)
+                                         int p_iTopB, int p_iTopK, Ref<VectorXi> p_vecTopK)
 {
     // Find topB
-    priority_queue< IFPair, vector<IFPair>, greater<IFPair> > minQueTopK;
+    priority_queue<IFPair, vector<IFPair>, greater<IFPair> > minQueTopK;
 
     // cout << "Number of unique candidates: " << mapCounter.size() << endl;
-    assert((int)mapCounter.size() >= p_iTopB);
+    assert((int) mapCounter.size() >= p_iTopB);
 
-    for (const auto& kv : mapCounter) // access via kv.first, kv.second
+    for (const auto &kv: mapCounter) // access via kv.first, kv.second
     {
-        if ((int)minQueTopK.size() < p_iTopB)
+        if ((int) minQueTopK.size() < p_iTopB)
             minQueTopK.push(IFPair(kv.first, kv.second));
         else if (kv.second > minQueTopK.top().m_fValue)
         {
@@ -920,14 +915,14 @@ void coCEOs::extract_TopB_TopK_Histogram(const unordered_map<int, float> &mapCou
 
     // Find top-K
     //for (int n = 0; n < (int)vecTopB.size(); ++n)
-    for (const auto& iPointIdx: vecTopB)
+    for (const auto &iPointIdx: vecTopB)
     {
         // Get point Idx
         //int iPointIdx = vecTopB[n];
         float fValue = p_vecQuery.dot(MATRIX_X.col(iPointIdx));
 
         // Insert into minQueue
-        if ((int)minQueTopK.size() < p_iTopK)
+        if ((int) minQueTopK.size() < p_iTopK)
             minQueTopK.push(IFPair(iPointIdx, fValue));
         else
         {
@@ -941,7 +936,6 @@ void coCEOs::extract_TopB_TopK_Histogram(const unordered_map<int, float> &mapCou
     }
 
 
-
     for (int n = p_iTopK - 1; n >= 0; --n)
     {
         // Get point index
@@ -949,13 +943,6 @@ void coCEOs::extract_TopB_TopK_Histogram(const unordered_map<int, float> &mapCou
         minQueTopK.pop();
     }
 }
-
-
-
-
-
-
-
 
 
 /** \brief Return approximate TopK for each query (using map to store samples)
@@ -998,8 +985,7 @@ void coCEOs::Map_TopK()
                 fht_float(vecProjectedQuery.data(), PARAM_INTERNAL_LOG2_CEOs_D_UP);
                 //FWHT(vecProjectedQuery);
             }
-        }
-        else
+        } else
             vecProjectedQuery = MATRIX_G * vecQuery;
 
         // Get the minimum and maximum indexes
@@ -1007,7 +993,7 @@ void coCEOs::Map_TopK()
         extract_TopK_MinMax_Idx(vecProjectedQuery, PARAM_CEOs_S0, vecMinIdx, vecMaxIdx);
 
         auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        projectTime += (float)durTime.count() / 1000000;
+        projectTime += (float) durTime.count() / 1000000;
 
         // Partially estimating inner product
         startTime = chrono::high_resolution_clock::now();
@@ -1016,7 +1002,7 @@ void coCEOs::Map_TopK()
         mapCounter.reserve(10 * PARAM_MIPS_NUM_SAMPLES);
 
         // Esimtate MIPS using the minIdx, take negative
-        for (const auto& minIdx: vecMinIdx)
+        for (const auto &minIdx: vecMinIdx)
         {
             vector<IFPair>::iterator iterBegin = coCEOs_MIN_IDX.begin() + minIdx * PARAM_CEOs_N_DOWN;
 
@@ -1029,7 +1015,7 @@ void coCEOs::Map_TopK()
                 auto mapIter = mapCounter.find((*iter).m_iIndex);
 
                 // We might need to multiply to projected query since we use larger s0
-                if (mapIter != mapCounter.end() ) // if exists
+                if (mapIter != mapCounter.end()) // if exists
                     mapIter->second -= (*iter).m_fValue; // update partial inner product
                     // both (*iter).m_fValue and vecProjectedQuery(minIdx) are negative
                     // mapIter->second += (*iter).m_fValue * vecProjectedQuery(minIdx);
@@ -1041,7 +1027,7 @@ void coCEOs::Map_TopK()
         }
 
         // Estimate MIPS using the maxIdx, take positive
-        for (const auto& maxIdx: vecMaxIdx)
+        for (const auto &maxIdx: vecMaxIdx)
         {
             vector<IFPair>::iterator iterBegin = coCEOs_MAX_IDX.begin() + maxIdx * PARAM_CEOs_N_DOWN;
 
@@ -1054,7 +1040,7 @@ void coCEOs::Map_TopK()
                 auto mapIter = mapCounter.find((*iter).m_iIndex);
 
                 // We might need to multiply to projected query if we use larger s0
-                if (mapIter != mapCounter.end() ) // if exists
+                if (mapIter != mapCounter.end()) // if exists
                     mapIter->second += (*iter).m_fValue;
 //                    mapIter->second += (*iter).m_fValue * vecProjectedQuery(maxIdx);
                 else // not exist
@@ -1067,7 +1053,7 @@ void coCEOs::Map_TopK()
         extract_TopB_TopK_Histogram(mapCounter, vecQuery, PARAM_MIPS_TOP_B, PARAM_MIPS_TOP_K, matTopK.col(q));
 
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topKTime += (float)durTime.count() / 1000000;
+        topKTime += (float) durTime.count() / 1000000;
 
     }
 
@@ -1077,12 +1063,12 @@ void coCEOs::Map_TopK()
     printf("Project time in second is %f \n", projectTime);
     printf("TopK time in second is %f \n", topKTime);
 
-    printf("coCEOs-Map TopK Time in second is %f \n", (float)durTime.count() / 1000000);
+    printf("coCEOs-Map TopK Time in second is %f \n", (float) durTime.count() / 1000000);
 
     if (PARAM_INTERNAL_SAVE_OUTPUT)
     {
         string sFileName = "coCEOs_Map_S_" + int2str(PARAM_MIPS_NUM_SAMPLES) + "_upD_" + int2str(PARAM_CEOs_D_UP)
-                    + "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt";
+                           + "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt";
 
         outputFile(matTopK, sFileName);
     }
@@ -1128,8 +1114,7 @@ void coCEOs::Vector_TopK()
                 fht_float(vecProjectedQuery.data(), PARAM_INTERNAL_LOG2_CEOs_D_UP);
                 //FWHT(vecProjectedQuery);
             }
-        }
-        else
+        } else
             vecProjectedQuery = MATRIX_G * vecQuery;
 
         // Get the minimum and maximum indexes
@@ -1137,7 +1122,7 @@ void coCEOs::Vector_TopK()
         extract_TopK_MinMax_Idx(vecProjectedQuery, PARAM_CEOs_S0, vecMinIdx, vecMaxIdx);
 
         auto durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        projectTime += (float)durTime.count() / 1000000;
+        projectTime += (float) durTime.count() / 1000000;
 
         // Partially estimating inner product
         startTime = chrono::high_resolution_clock::now();
@@ -1145,7 +1130,7 @@ void coCEOs::Vector_TopK()
         VectorXf vecCounter = VectorXf::Zero(PARAM_DATA_N); // counting histogram of N points
 
         // Esimtate MIPS using the minIdx, take negative
-        for (const auto& minIdx : vecMinIdx)
+        for (const auto &minIdx: vecMinIdx)
         {
             vector<IFPair>::iterator iterBegin = coCEOs_MIN_IDX.begin() + minIdx * PARAM_CEOs_N_DOWN;
 
@@ -1154,7 +1139,7 @@ void coCEOs::Vector_TopK()
         }
 
         // Estimate MIPS using the maxIdx, take positive
-        for (const auto& maxIdx : vecMaxIdx)
+        for (const auto &maxIdx: vecMaxIdx)
         {
             vector<IFPair>::iterator iterBegin = coCEOs_MAX_IDX.begin() + maxIdx * PARAM_CEOs_N_DOWN;
 
@@ -1163,10 +1148,11 @@ void coCEOs::Vector_TopK()
         }
 
         //Use the funtion (extract_TopB_TopK_Histogram) in sCEOsEst
-        this->sCEOsEst::extract_TopB_TopK_Histogram(vecCounter, vecQuery, PARAM_MIPS_TOP_B, PARAM_MIPS_TOP_K, matTopK.col(q));
+        this->sCEOsEst::extract_TopB_TopK_Histogram(vecCounter, vecQuery, PARAM_MIPS_TOP_B, PARAM_MIPS_TOP_K,
+                                                    matTopK.col(q));
 
         durTime = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - startTime);
-        topKTime += (float)durTime.count() / 1000000;
+        topKTime += (float) durTime.count() / 1000000;
 
     }
 
@@ -1176,23 +1162,51 @@ void coCEOs::Vector_TopK()
     printf("Estimation time in second is %f \n", projectTime);
     printf("TopK time in second is %f \n", topKTime);
 
-    printf("coCEOs-Vector TopK Time in second is %f \n", (float)durTime.count() / 1000000);
+    printf("coCEOs-Vector TopK Time in second is %f \n", (float) durTime.count() / 1000000);
 
     if (PARAM_INTERNAL_SAVE_OUTPUT)
     {
         string sFileName = "coCEOs_Vector_S_" + int2str(PARAM_MIPS_NUM_SAMPLES) + "_upD_" + int2str(PARAM_CEOs_D_UP)
-                    + "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt";
+                           + "_s0_" + int2str(PARAM_CEOs_S0) + "_Cand_" + int2str(PARAM_MIPS_TOP_B) + ".txt";
 
         outputFile(matTopK, sFileName);
     }
 }
 
 
-void coCEOs::find_TopK(){
+void coCEOs::find_TopK()
+{
 
     // Heuristic to decide using map or vector
     if (PARAM_MIPS_NUM_SAMPLES <= PARAM_DATA_N / 2)
         Map_TopK();
     else
         Vector_TopK();
+}
+
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(example, m)
+{
+    py::class_<OneCEOs>(m, "OneCEOs")
+            .def(py::init<int, int, int, int, int, bool, int>())
+            .def("build_Index", &OneCEOs::build_Index)
+            .def("find_TopK", &OneCEOs::find_TopK);
+    py::class_<TwoCEOs,OneCEOs>(m, "TwoCEOs")
+            .def(py::init<int, int, int, int, int, bool, int>())
+            .def("build_Index", &TwoCEOs::build_Index)
+            .def("find_TopK", &TwoCEOs::find_TopK);
+    py::class_<sCEOsEst,OneCEOs>(m, "sCEOsEst")
+            .def(py::init<int, int, int, int, int, bool, int,int>())
+            .def("build_Index", &sCEOsEst::build_Index)
+            .def("find_TopK", &sCEOsEst::find_TopK);
+    py::class_<sCEOsTA,sCEOsEst>(m, "sCEOsTA")
+            .def(py::init<int, int, int, int, int, bool, int,int>())
+            .def("build_Index", &sCEOsTA::build_Index)
+            .def("find_TopK", &sCEOsTA::find_TopK);
+    py::class_<coCEOs,sCEOsEst>(m, "coCEOs")
+            .def(py::init<int, int, int, int, int, bool, int,int,int>())
+            .def("build_Index", &coCEOs::build_Index)
+            .def("find_TopK", &coCEOs::find_TopK);
 }

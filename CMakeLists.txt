@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 #设置项目名称
 project(MIPS_OOP VERSION 0.1)
 #添加子模块pybind11
-#add_subdirectory(pybind11)
+add_subdirectory(include/pybind11)
 set(CMAKE_CXX_STANDARD 17)
 
 if(UNIX)
@@ -11,7 +11,7 @@ if(UNIX)
 elseif(WIN32)
     message("current platform: Windows ")
 else()
-    message("current platform: unkonw ")
+    message("current platform: unknown")
 endif()
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -28,11 +28,14 @@ aux_source_directory(src SOURCE)
 #pybind11_add_module(main
 #        ${SOURCE}
 #        )
-add_executable(main ${SOURCE})
-target_link_libraries(main
+#add_executable(main ${SOURCE})
+pybind11_add_module(example
+        ${SOURCE}
+        )
+target_link_libraries(example
         PRIVATE
         Boost::container
         )
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(main PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(example PUBLIC OpenMP::OpenMP_CXX)
 endif()
