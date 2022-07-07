@@ -25,10 +25,8 @@ else()
     message (FATAL_ERROR "Cannot find Boost")
 endif()
 aux_source_directory(src SOURCE)
-#pybind11_add_module(main
-#        ${SOURCE}
-#        )
-#add_executable(main ${SOURCE})
+
+#add_executable(example ${SOURCE})
 pybind11_add_module(example
         ${SOURCE}
         )
